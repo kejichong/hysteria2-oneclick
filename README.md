@@ -4,6 +4,44 @@
 
 脚本可以与同一台服务器上的 Xray/VLESS 共存：Xray 使用 TCP 443，Hysteria2 使用 UDP 443，两者不会发生端口冲突。
 
+[![Release](https://img.shields.io/github/v/release/kejichong/hysteria2-oneclick?display_name=tag)](https://github.com/kejichong/hysteria2-oneclick/releases)
+[![License](https://img.shields.io/github/license/kejichong/hysteria2-oneclick)](LICENSE)
+[![Shell](https://img.shields.io/badge/shell-bash-4EAA25?logo=gnubash&logoColor=white)](hysteria2-oneclick.sh)
+
+## 项目特点
+
+- 不需要购买或解析域名。
+- 默认使用 UDP 443，可与同机 TCP 443 服务共存。
+- 自动生成认证密码、Salamander 混淆密码和自签名证书。
+- 客户端链接包含证书 SHA-256 指纹固定，避免只使用 `insecure`。
+- 自动识别服务器公网 IPv4。
+- 自动检测 UDP 端口占用，并处理已启用的 UFW。
+- 安装后执行本机端到端代理测试，失败时自动恢复原配置。
+- 生成可直接导入 v2rayN 的 `hysteria2://` 链接。
+
+## 最快部署
+
+先在 VPS 厂商安全组中放行 `UDP 443`，然后从 Windows PowerShell 登录服务器：
+
+```powershell
+ssh root@服务器IP
+```
+
+进入服务器后执行固定版本命令：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/kejichong/hysteria2-oneclick/refs/tags/v1.0.0/hysteria2-oneclick.sh) --show-link
+```
+
+完整说明、首次连接提示和 v2rayN 导入方法请继续阅读下文。
+
+## 版本与下载
+
+- [查看全部 Releases](https://github.com/kejichong/hysteria2-oneclick/releases)
+- [下载 v1.0.0 源码](https://github.com/kejichong/hysteria2-oneclick/archive/refs/tags/v1.0.0.zip)
+- [查看 v1.0.0 脚本](https://github.com/kejichong/hysteria2-oneclick/blob/v1.0.0/hysteria2-oneclick.sh)
+- [获取 v1.0.0 Raw 地址](https://raw.githubusercontent.com/kejichong/hysteria2-oneclick/refs/tags/v1.0.0/hysteria2-oneclick.sh)
+
 ## 部署前准备
 
 - 一台具有公网 IP 的 Ubuntu 22.04 LTS 或更高版本、Debian 11 或更高版本 VPS。
@@ -179,6 +217,33 @@ OVERWRITE
 ```
 
 这不是服务器密码，而是防止误覆盖的确认词。重新运行会生成新的认证密码、混淆密码和证书，因此旧客户端链接会失效，需要重新导入新链接。
+
+## 常见问题
+
+### 脚本显示成功，但 v2rayN 无法连接
+
+首先检查 VPS 厂商安全组是否放行了 `UDP 443`。只放行 TCP 443 对 Hysteria2 无效。然后在服务器执行：
+
+```bash
+systemctl is-active hysteria-server
+ss -lunp | grep ':443'
+```
+
+### `cat /root/hysteria2-client-link.txt` 有什么作用
+
+它只负责重新显示已经生成的客户端链接，不会重新安装服务，也不会修改防火墙或端口。
+
+### TCP 443 已被 Xray 占用，还能部署吗
+
+可以。TCP 443 和 UDP 443 是两个不同的监听端口。本脚本仅使用 UDP 443，不会停止或覆盖 Xray 的 TCP 443 服务。
+
+### 重新执行脚本后旧节点为什么失效
+
+重新部署会生成新的认证密码、混淆密码和证书。需要重新复制 `/root/hysteria2-client-link.txt` 中的新链接并导入客户端。
+
+### 如何确认问题发生在服务器还是客户端
+
+脚本结束前会通过临时 Hysteria2 客户端执行端到端代理测试。如果显示“部署成功”和有效 HTTP 状态码，通常说明服务端配置正确，应继续检查云安全组、客户端导入参数和本地网络对 UDP 的支持。
 
 ## 安全提示
 
