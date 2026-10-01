@@ -1,0 +1,6 @@
+*.log
+*.tmp
+*secrets*
+*client-link*
+.DS_Store
+Thumbs.db
